@@ -1,0 +1,27 @@
+package Basics;
+
+public class test_basic {
+
+    public static void main(String[] args) {
+
+        int[] arr = {1, 2, 5, 4, 6};
+        int large = arr[0];
+        int second = arr[0];
+
+        for (int i : arr){
+
+            if (i > large)
+                large = i;
+        }
+
+        for (int i : arr){
+
+            if(i > second && i < large)
+                second = i;
+        }
+
+        System.out.println("largest element = " + large);
+        System.out.println("second large element = " + second);
+        
+    }
+}
