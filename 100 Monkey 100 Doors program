@@ -4,7 +4,6 @@ The second monkey that is released visits doors of the order 2, 4, 6, 8, 10….
 The third monkey released visits doors 3, 6, 9,12, 15……, and so on.
 
 class test {
-
     public static void main(String[] args) {
 
         int[] Door100 = new int[100];
