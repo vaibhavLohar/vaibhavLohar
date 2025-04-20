@@ -5,7 +5,7 @@ gross salary as per bellow policy:
 
 1) if basic salary is less than 1500 then HRA = 10% of basic and DA = 25% of basic
 2) if basic salary is 1500 or above then HRA = 500 of basic and DA = 50% of basic
-* */
+*/
 
 import java.util.Scanner;
 
