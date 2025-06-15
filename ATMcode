@@ -1,0 +1,354 @@
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+
+/**
+ * A simple ATM machine interface using Swing.
+ * Features:
+ *  - Login with default PIN (1234).
+ *  - Check balance, withdraw, deposit.
+ *  - Saves balance to a file for persistence between runs.
+ * Modern design with readable fonts and spacing.
+ */
+public class ATMApp extends JFrame {
+    private static final String DATA_FILE = "atm_balance.dat";
+    private static final String DEFAULT_PIN = "1234";
+
+    private CardLayout cardLayout = new CardLayout();
+    private JPanel mainPanel = new JPanel(cardLayout);
+
+    private JLabel balanceLabel;
+    private JTextField depositField;
+    private JTextField withdrawField;
+    private JPasswordField pinField;
+    private JLabel loginMessageLabel;
+    private JLabel transactionMessageLabel;
+
+    private double balance = 0.0;
+
+    public ATMApp() {
+        setTitle("ATM Machine");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 350);
+        setLocationRelativeTo(null);
+        setResizable(false);
+
+        loadBalance();
+
+        mainPanel.add(loginPanel(), "Login");
+        mainPanel.add(menuPanel(), "Menu");
+        mainPanel.add(depositPanel(), "Deposit");
+        mainPanel.add(withdrawPanel(), "Withdraw");
+        mainPanel.add(balancePanel(), "Balance");
+
+        add(mainPanel);
+        cardLayout.show(mainPanel, "Login");
+    }
+
+    private JPanel loginPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        panel.setBackground(new Color(240, 248, 255)); // Light blue background
+        JLabel titleLabel = new JLabel("Welcome to ATM Machine", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(Color.BLACK);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 20, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel center = new JPanel(new GridLayout(3, 1, 0, 12));
+        center.setBackground(new Color(240, 248, 255));
+        JLabel pinLabel = new JLabel("Enter PIN:");
+        pinLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        pinLabel.setForeground(Color.BLACK);
+        center.add(pinLabel);
+        pinField = new JPasswordField();
+        pinField.setFont(new Font("Arial", Font.PLAIN, 16));
+        center.add(pinField);
+
+        loginMessageLabel = new JLabel("", SwingConstants.CENTER);
+        loginMessageLabel.setForeground(Color.RED);
+        loginMessageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        center.add(loginMessageLabel);
+
+        panel.add(center, BorderLayout.CENTER);
+
+        JButton loginBtn = new JButton("Login");
+        loginBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        loginBtn.setBackground(new Color(34, 139, 34)); // Forest Green
+        loginBtn.setForeground(Color.BLACK); // Changed text color to black
+        loginBtn.setFocusPainted(false);
+        loginBtn.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        loginBtn.addActionListener(e -> checkPin());
+        panel.add(loginBtn, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void checkPin() {
+        String enteredPin = new String(pinField.getPassword());
+        if (enteredPin.equals(DEFAULT_PIN)) {
+            loginMessageLabel.setText("");
+            pinField.setText("");
+            cardLayout.show(mainPanel, "Menu");
+        } else {
+            loginMessageLabel.setText("Incorrect PIN. Please try again.");
+            pinField.setText("");
+        }
+    }
+
+    private JPanel menuPanel() {
+        JPanel panel = new JPanel(new GridLayout(5, 1, 0, 16));
+        panel.setBorder(new EmptyBorder(30, 50, 30, 50));
+        panel.setBackground(new Color(240, 248, 255));
+
+        JLabel menuLabel = new JLabel("Main Menu", SwingConstants.CENTER);
+        menuLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        menuLabel.setForeground(Color.BLACK);
+        panel.add(menuLabel);
+
+        JButton checkBalanceBtn = new JButton("Check Balance");
+        JButton depositBtn = new JButton("Deposit");
+        JButton withdrawBtn = new JButton("Withdraw");
+        JButton exitBtn = new JButton("Exit");
+
+        JButton[] buttons = {checkBalanceBtn, depositBtn, withdrawBtn, exitBtn};
+        for (JButton b : buttons) {
+            b.setFont(new Font("Arial", Font.BOLD, 16));
+            b.setBackground(new Color(70, 130, 180)); // Steel Blue
+            b.setForeground(Color.BLACK); // Changed text color to black
+            b.setFocusPainted(false);
+            b.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+            panel.add(b);
+        }
+
+        checkBalanceBtn.addActionListener(e -> {
+            updateBalanceLabel();
+            cardLayout.show(mainPanel, "Balance");
+        });
+
+        depositBtn.addActionListener(e -> {
+            depositField.setText("");
+            transactionMessageLabel.setText("");
+            cardLayout.show(mainPanel, "Deposit");
+        });
+
+        withdrawBtn.addActionListener(e -> {
+            withdrawField.setText("");
+            transactionMessageLabel.setText("");
+            cardLayout.show(mainPanel, "Withdraw");
+        });
+
+        exitBtn.addActionListener(e -> {
+            saveBalance();
+            System.exit(0);
+        });
+
+        return panel;
+    }
+
+    private JPanel balancePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        panel.setBackground(new Color(240, 248, 255));
+
+        JLabel titleLabel = new JLabel("Your Current Balance", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(Color.BLACK);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 30, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        balanceLabel = new JLabel("", SwingConstants.CENTER);
+        balanceLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        balanceLabel.setForeground(Color.BLACK);
+        panel.add(balanceLabel, BorderLayout.CENTER);
+
+        JButton backBtn = new JButton("Back to Menu");
+        backBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        backBtn.setBackground(new Color(70, 130, 180)); // Steel Blue
+        backBtn.setForeground(Color.BLACK); // Changed text color to black
+        backBtn.setFocusPainted(false);
+        backBtn.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        backBtn.addActionListener(e -> cardLayout.show(mainPanel, "Menu"));
+        panel.add(backBtn, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void updateBalanceLabel() {
+        balanceLabel.setText(String.format("$%,.2f", balance));
+    }
+
+    private JPanel depositPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        panel.setBackground(new Color(240, 248, 255));
+
+        JLabel titleLabel = new JLabel("Deposit Funds", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(Color.BLACK);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 20, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new GridLayout(3, 1, 0, 12));
+        centerPanel.setBackground(new Color(240, 248, 255));
+        JLabel depositLabel = new JLabel("Enter amount to deposit ($):");
+        depositLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        depositLabel.setForeground(Color.BLACK);
+        centerPanel.add(depositLabel);
+        depositField = new JTextField();
+        depositField.setFont(new Font("Arial", Font.PLAIN, 16));
+        centerPanel.add(depositField);
+
+        transactionMessageLabel = new JLabel("", SwingConstants.CENTER);
+        transactionMessageLabel.setForeground(Color.RED);
+        transactionMessageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        centerPanel.add(transactionMessageLabel);
+
+        panel.add(centerPanel, BorderLayout.CENTER);
+
+        JButton depositBtn = new JButton("Deposit");
+        depositBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        depositBtn.setBackground(new Color(34, 139, 34)); // Forest Green
+        depositBtn.setForeground(Color.BLACK); // Changed text color to black
+        depositBtn.setFocusPainted(false);
+        depositBtn.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        depositBtn.addActionListener(e -> performDeposit());
+        panel.add(depositBtn, BorderLayout.SOUTH);
+
+        JButton backBtn = new JButton("Back to Menu");
+        backBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        backBtn.setBackground(new Color(120, 120, 120));
+        backBtn.setForeground(Color.BLACK); // Changed text color to black
+        backBtn.setFocusPainted(false);
+        backBtn.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        backBtn.addActionListener(e -> cardLayout.show(mainPanel, "Menu"));
+        panel.add(backBtn, BorderLayout.NORTH);
+
+        return panel;
+    }
+
+    private void performDeposit() {
+        String text = depositField.getText().trim();
+        try {
+            double amount = Double.parseDouble(text);
+            if (amount <= 0) {
+                transactionMessageLabel.setText("Enter a positive amount.");
+                return;
+            }
+            balance += amount;
+            saveBalance();
+            transactionMessageLabel.setForeground(new Color(0, 128, 0));
+            transactionMessageLabel.setText(String.format("Successfully deposited $%,.2f", amount));
+            depositField.setText("");
+        } catch (NumberFormatException ex) {
+            transactionMessageLabel.setForeground(Color.RED);
+            transactionMessageLabel.setText("Invalid amount entered.");
+        }
+    }
+
+    private JPanel withdrawPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(new EmptyBorder(30, 30, 30, 30));
+        panel.setBackground(new Color(240, 248, 255));
+
+        JLabel titleLabel = new JLabel("Withdraw Funds", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setForeground(Color.BLACK);
+        titleLabel.setBorder(new EmptyBorder(0, 0, 20, 0));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new GridLayout(3, 1, 0, 12));
+        centerPanel.setBackground(new Color(240, 248, 255));
+        JLabel withdrawLabel = new JLabel("Enter amount to withdraw ($):");
+        withdrawLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        withdrawLabel.setForeground(Color.BLACK);
+        centerPanel.add(withdrawLabel);
+        withdrawField = new JTextField();
+        withdrawField.setFont(new Font("Arial", Font.PLAIN, 16));
+        centerPanel.add(withdrawField);
+
+        transactionMessageLabel = new JLabel("", SwingConstants.CENTER);
+        transactionMessageLabel.setForeground(Color.RED);
+        transactionMessageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        centerPanel.add(transactionMessageLabel);
+
+        panel.add(centerPanel, BorderLayout.CENTER);
+
+        JButton withdrawBtn = new JButton("Withdraw");
+        withdrawBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        withdrawBtn.setBackground(new Color(34, 139, 34)); // Forest Green
+        withdrawBtn.setForeground(Color.BLACK); // Changed text color to black
+        withdrawBtn.setFocusPainted(false);
+        withdrawBtn.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        withdrawBtn.addActionListener(e -> performWithdraw());
+        panel.add(withdrawBtn, BorderLayout.SOUTH);
+
+        JButton backBtn = new JButton("Back to Menu");
+        backBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        backBtn.setBackground(new Color(120, 120, 120));
+        backBtn.setForeground(Color.BLACK); // Changed text color to black
+        backBtn.setFocusPainted(false);
+        backBtn.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        backBtn.addActionListener(e -> cardLayout.show(mainPanel, "Menu"));
+        panel.add(backBtn, BorderLayout.NORTH);
+
+        return panel;
+    }
+
+    private void performWithdraw() {
+        String text = withdrawField.getText().trim();
+        try {
+            double amount = Double.parseDouble(text);
+            if (amount <= 0) {
+                transactionMessageLabel.setText("Enter a positive amount.");
+                return;
+            }
+            if (amount > balance) {
+                transactionMessageLabel.setText("Insufficient funds.");
+                return;
+            }
+            balance -= amount;
+            saveBalance();
+            transactionMessageLabel.setForeground(new Color(0, 128, 0));
+            transactionMessageLabel.setText(String.format("Successfully withdrew $%,.2f", amount));
+            withdrawField.setText("");
+        } catch (NumberFormatException ex) {
+            transactionMessageLabel.setForeground(Color.RED);
+            transactionMessageLabel.setText("Invalid amount entered.");
+        }
+    }
+
+    private void saveBalance() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATA_FILE))) {
+            oos.writeDouble(balance);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error saving balance data.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadBalance() {
+        File file = new File(DATA_FILE);
+        if (!file.exists()) {
+            balance = 0.0;
+            return;
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(DATA_FILE))) {
+            balance = ois.readDouble();
+        } catch (IOException e) {
+            balance = 0.0;
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {}
+
+        SwingUtilities.invokeLater(() -> {
+            ATMApp app = new ATMApp();
+            app.setVisible(true);
+        });
+    }
+}
