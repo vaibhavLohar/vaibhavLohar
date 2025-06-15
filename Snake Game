@@ -1,0 +1,250 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.LinkedList;
+import java.util.Random;
+
+public class SnakeGame extends JFrame {
+
+    public SnakeGame() {
+        setTitle("Snake Game");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setResizable(false);
+
+        GamePanel panel = new GamePanel();
+        add(panel);
+
+        pack();
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        // Use event dispatch thread for GUI work
+        SwingUtilities.invokeLater(() -> {
+            new SnakeGame();
+        });
+    }
+}
+
+class GamePanel extends JPanel implements ActionListener {
+
+    private static final int BOARD_WIDTH = 600;
+    private static final int BOARD_HEIGHT = 600;
+    private static final int UNIT_SIZE = 20; // Size of each segment and grid unit
+    private static final int GAME_UNITS = (BOARD_WIDTH * BOARD_HEIGHT) / (UNIT_SIZE * UNIT_SIZE);
+    private static final int DELAY = 100; // timer delay in ms for game speed
+
+    private final LinkedList<Point> snake = new LinkedList<>();
+    private Point food;
+    private char direction = 'R'; // U=up, D=down, L=left, R=right
+    private boolean running = false;
+    private Timer timer;
+    private int score = 0;
+
+    private Random random;
+
+    public GamePanel() {
+        setPreferredSize(new Dimension(BOARD_WIDTH, BOARD_HEIGHT));
+        setBackground(Color.black);
+        setFocusable(true);
+        setFont(new Font("Consolas", Font.BOLD, 18));
+        random = new Random();
+
+        addKeyListener(new MyKeyAdapter());
+        startGame();
+    }
+
+    public void startGame() {
+        snake.clear();
+        // Initialize snake starting position: 6 segments starting at (100,100) going right
+        for (int i = 0; i < 6; i++) {
+            snake.add(new Point(100 - i * UNIT_SIZE, 100));
+        }
+        placeFood();
+        direction = 'R';
+        score = 0;
+        running = true;
+
+        // Start the game loop timer
+        timer = new Timer(DELAY, this);
+        timer.start();
+    }
+
+    private void placeFood() {
+        int x = random.nextInt(BOARD_WIDTH / UNIT_SIZE) * UNIT_SIZE;
+        int y = random.nextInt(BOARD_HEIGHT / UNIT_SIZE) * UNIT_SIZE;
+        food = new Point(x, y);
+        // Ensure food isn't placed on snake body
+        while (snake.contains(food)) {
+            x = random.nextInt(BOARD_WIDTH / UNIT_SIZE) * UNIT_SIZE;
+            y = random.nextInt(BOARD_HEIGHT / UNIT_SIZE) * UNIT_SIZE;
+            food = new Point(x, y);
+        }
+    }
+
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        draw(g);
+    }
+
+    private void draw(Graphics g) {
+        if (running) {
+            // Draw food
+            g.setColor(Color.red);
+            g.fillOval(food.x, food.y, UNIT_SIZE, UNIT_SIZE);
+
+            // Draw snake
+            for (int i = 0; i < snake.size(); i++) {
+                if (i == 0) {
+                    // Head: bright neon green
+                    g.setColor(new Color(0, 255, 0));
+                } else {
+                    // Body: slightly darker green
+                    g.setColor(new Color(0, 180, 0));
+                }
+                Point p = snake.get(i);
+                g.fillRect(p.x, p.y, UNIT_SIZE, UNIT_SIZE);
+            }
+
+            // Draw score
+            g.setColor(Color.white);
+            g.drawString("Score: " + score, 10, 20);
+
+        } else {
+            gameOver(g);
+        }
+    }
+
+    private void move() {
+        // Calculate new head position based on current direction
+        Point head = snake.getFirst();
+        int x = head.x;
+        int y = head.y;
+
+        switch (direction) {
+            case 'U':
+                y -= UNIT_SIZE;
+                break;
+            case 'D':
+                y += UNIT_SIZE;
+                break;
+            case 'L':
+                x -= UNIT_SIZE;
+                break;
+            case 'R':
+                x += UNIT_SIZE;
+                break;
+        }
+        Point newHead = new Point(x, y);
+
+        // Add new head to the front of the snake
+        snake.addFirst(newHead);
+
+        // If snake eats food, increase score and don't remove tail (grow)
+        if (newHead.equals(food)) {
+            score++;
+            placeFood();
+        } else {
+            // Move forward: remove the tail segment
+            snake.removeLast();
+        }
+    }
+
+    private void checkCollisions() {
+        Point head = snake.getFirst();
+
+        // Check if head collides with walls
+        if (head.x < 0 || head.x >= BOARD_WIDTH || head.y < 0 || head.y >= BOARD_HEIGHT) {
+            running = false;
+        }
+
+        // Check if head collides with body (skip head index 0)
+        for (int i = 1; i < snake.size(); i++) {
+            if (head.equals(snake.get(i))) {
+                running = false;
+                break;
+            }
+        }
+
+        if (!running) {
+            timer.stop();
+        }
+    }
+
+    private void gameOver(Graphics g) {
+        String msg = "Game Over! Your score: " + score;
+        String restartMsg = "Press SPACE to Restart";
+
+        g.setColor(Color.red);
+        g.setFont(new Font("Consolas", Font.BOLD, 36));
+        FontMetrics metrics = getFontMetrics(g.getFont());
+        int x = (BOARD_WIDTH - metrics.stringWidth(msg)) / 2;
+        int y = BOARD_HEIGHT / 2;
+        g.drawString(msg, x, y);
+
+        g.setFont(new Font("Consolas", Font.PLAIN, 22));
+        metrics = getFontMetrics(g.getFont());
+        int x2 = (BOARD_WIDTH - metrics.stringWidth(restartMsg)) / 2;
+        int y2 = y + 40;
+        g.drawString(restartMsg, x2, y2);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (running) {
+            move();
+            checkCollisions();
+        }
+        repaint();
+    }
+
+    private class MyKeyAdapter extends KeyAdapter {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            int key = e.getKeyCode();
+
+            // Prevent snake from moving in the opposite direction directly
+            switch (key) {
+                case KeyEvent.VK_LEFT:
+                    if (direction != 'R') {
+                        direction = 'L';
+                    }
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    if (direction != 'L') {
+                        direction = 'R';
+                    }
+                    break;
+                case KeyEvent.VK_UP:
+                    if (direction != 'D') {
+                        direction = 'U';
+                    }
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if (direction != 'U') {
+                        direction = 'D';
+                    }
+                    break;
+                case KeyEvent.VK_SPACE:
+                    if (!running) {
+                        startGame();
+                    }
+                    break;
+                case KeyEvent.VK_P:
+                    // Pause toggle
+                    if (running) {
+                        timer.stop();
+                        running = false;
+                    } else if (!running) {
+                        timer.start();
+                        running = true;
+                    }
+                    repaint();
+                    break;
+            }
+        }
+    }
+}
+
