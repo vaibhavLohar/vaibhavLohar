@@ -12,7 +12,7 @@ public class Calculator extends JFrame implements ActionListener {
     public Calculator() {
         setTitle("Calculator");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(360, 480); // approximate mobile aspect ratio
+        setSize(360, 480);
         setMinimumSize(new Dimension(320, 480));
         setLocationRelativeTo(null);
 
@@ -20,12 +20,11 @@ public class Calculator extends JFrame implements ActionListener {
     }
 
     private void initUI() {
-        // Use GridBagLayout for responsive grid
+        
         Container pane = getContentPane();
         pane.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
-        // Display (readonly)
         display = new JTextField("0");
         display.setFont(new Font("Inter", Font.PLAIN, 32));
         display.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -33,7 +32,7 @@ public class Calculator extends JFrame implements ActionListener {
         display.setBackground(Color.WHITE);
         display.setForeground(Color.BLACK);
         display.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        display.setPreferredSize(new Dimension(320, 60)); // fixed height display
+        display.setPreferredSize(new Dimension(320, 60)); 
 
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridwidth = 4;
@@ -44,7 +43,7 @@ public class Calculator extends JFrame implements ActionListener {
 
         // Buttons panel
         JPanel buttonsPanel = new JPanel(new GridBagLayout());
-        buttonsPanel.setBackground(new Color(245, 251, 251)); // light turquoise-ish background
+        buttonsPanel.setBackground(new Color(245, 251, 251)); 
 
         String[][] buttons = {
                 {"C", "%", "Back", "÷"},
@@ -55,7 +54,7 @@ public class Calculator extends JFrame implements ActionListener {
         };
 
         Color textColor = Color.BLACK;
-        Color operatorColor = new Color(6, 182, 212); // turquoise accent
+        Color operatorColor = new Color(6, 182, 212); 
 
         gbc.gridwidth = 1;
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -68,8 +67,8 @@ public class Calculator extends JFrame implements ActionListener {
 
                 switch (text) {
                     case "Back":
-                        // Use Unicode for backspace symbol or a placeholder:
-                        btn.setText("\u232B"); // ⌫ Backspace symbol
+                        
+                        btn.setText("\u232B"); 
                         btn.setFont(new Font("Inter", Font.PLAIN, 26));
                         btn.setToolTipText("Backspace");
                         btn.setForeground(operatorColor);
@@ -141,7 +140,7 @@ public class Calculator extends JFrame implements ActionListener {
             lastResult = 0;
             display.setText("0");
             startNewInput = true;
-        } else if (cmd.equals("\u232B")) { // Backspace
+        } else if (cmd.equals("\u232B")) { 
             if (!startNewInput && currentInput.length() > 0) {
                 currentInput.deleteCharAt(currentInput.length() - 1);
                 display.setText(currentInput.length() == 0 ? "0" : currentInput.toString());
@@ -154,7 +153,7 @@ public class Calculator extends JFrame implements ActionListener {
                 } else {
                     lastResult = calculate(lastResult, inputValue, lastOperator);
                 }
-                // Show the latest operation on display
+               
                 display.setText(removeTrailingZeros(lastResult) + " " + cmd);
             }
             lastOperator = cmd;
